@@ -112,7 +112,7 @@ class DataSet:
         return header
 
     def _get_form_to_send(self, response):
-        soup = bs.BeautifulSoup(response.content, 'html.parser')
+        soup = bs.BeautifulSoup(response.content, 'lxml')
         form = soup.find_all('form')[0]
         data_to_send = dict()
         for field in form.find_all('input'):

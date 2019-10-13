@@ -11,27 +11,44 @@ from histdata_downloader import histdata_downloader
 from histdata_downloader import cli
 
 
-@pytest.fixture
-def response():
-    """Sample pytest fixture.
-
-    See more at: http://doc.pytest.org/en/latest/fixture.html
-    """
-    # import requests
-    # return requests.get('https://github.com/audreyr/cookiecutter-pypackage')
-
-
-def test_content(response):
-    """Sample pytest test function with the pytest fixture as an argument."""
-    # from bs4 import BeautifulSoup
-    # assert 'GitHub' in BeautifulSoup(response.content).title.string
+def test_date_formatter():
+    """test the date formater used to convert raw date in well structured
+    datetime."""
+    raw_date = '20190101'
+    raw_time = '20000000'
+    expected = '2019-01-01 00:00:00.0'
+    assert histdata_downloader.date_formatter(raw_date+raw_time) == expected
 
 
-def test_command_line_interface():
-    """Test the CLI."""
-    runner = CliRunner()
-    result = runner.invoke(cli.main)
-    assert result.exit_code == 0
-    help_result = runner.invoke(cli.main, ['--help'])
-    assert help_result.exit_code == 0
-    assert 'Show this message and exit.' in help_result.output
+@pytest.fixture()
+def runner():
+    return CliRunner()
+
+
+class TestCommandLineInterface():
+    """Test suite for command line interface."""
+
+    def test_main_call(self, runner):
+        """Test the call of the cli without command."""
+        res = runner.invoke(cli.main)
+        assert res.exit_code == 0
+
+    def test_main_help(self, runner):
+        help_result = runner.invoke(cli.main, ['--help'])
+        assert help_result.exit_code == 0
+        assert 'Show this message and exit.' in help_result.output
+
+
+@pytest.fixture()
+def dataset():
+    return histdata_downloader.DataSet('EURUSD', 2018, 1)
+
+
+class TestDataSet():
+    """Test suite for dataset object."""
+
+    def test_url_property(self, dataset):
+        assert dataset.url == dataset.ohlc_url + '/EURUSD/2018/1'
+
+    def test_str_method(self, dataset):
+        assert dataset.__str__() == 'EURUSD/y2018/m1'
