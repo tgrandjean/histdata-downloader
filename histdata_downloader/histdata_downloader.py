@@ -178,6 +178,7 @@ class SetDownloader:
         self.date_start = config.get('date_start')
         self.date_end = config.get('date_end')
         self.output_path = config.get('output_path')
+        self.type = config.get('type')
 
     def _init_session(self):
         session = requests.Session()
@@ -196,7 +197,8 @@ class SetDownloader:
         for instrument in self.instruments:
             for date in pd.date_range(self.date_start, self.date_end,
                                       freq='M', closed='left'):
-                yield DataSet(instrument, date.year, date.month)
+                yield DataSet(instrument, date.year, date.month,
+                              type=self.type)
 
     def run(self):
         logger.debug('Run method called.')
