@@ -2,15 +2,19 @@
 
 """Console script for histdata_downloader."""
 import sys
+import logging
 import click
+
+from histdata_downloader.logger import log_setup
+
+logger = logging.getLogger(__name__)
 
 
 @click.command()
-def main(args=None):
+@click.option("--verbosity", "-v", default='INFO')
+def main(verbosity):
     """Console script for histdata_downloader."""
-    click.echo("Replace this message by putting your code into "
-               "histdata_downloader.cli.main")
-    click.echo("See click documentation at http://click.pocoo.org/")
+    log_setup(verbosity, 'activity.log')
     return 0
 
 
