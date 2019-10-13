@@ -13,6 +13,7 @@ coverage==4.5.1
 docutils==0.15.2
 filelock==3.0.12
 flake8==3.5.0
+future-fstrings==1.2.0
 histdata-downloader==0.1.0
 idna==2.8
 imagesize==1.1.0
