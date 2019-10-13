@@ -52,14 +52,14 @@ class DataSet:
     def __init__(self, instrument, year, month, type='M1', tmp_dir="/tmp"):
         logger.debug("tick set object init with args : %s | %i | %i",
                      instrument, year, month)
+        self._type = None
+        self._tmp_dir = tmp_dir
+        self._zip_name = None
+        self._csv_path = None
         self.instrument = instrument
         self.year = year
         self.month = month
         self.type = type
-        self._tmp_dir = tmp_dir
-        self._zip_name = None
-        self._zip_sha256 = None
-        self._csv_path = None
 
     @property
     def url(self):
@@ -70,14 +70,23 @@ class DataSet:
             data_url = self.ticks_url
         return f'{data_url}/{self.instrument}/{self.year}/{self.month}'
 
-    def get(self, session=None, output_path=None):
-        """Get method. Run this for process a set."""
-        logger.debug("get set : %s ", self.__str__())
-        self._download(session)
-        self._extract()
-        if not output_path:
-            raise Exception('No output_path')
-        self._save(output_path)
+    @property
+    def type(self):
+        return self._type
+
+    @type.setter
+    def type(self, type):
+        if type.lower() in ['m1', 'ticks'] or type.upper() in ['M1', 'TICKS']:
+            self._type = type
+        else:
+            raise ValueError('Type must be M1 or ticks')
+
+    @staticmethod
+    def _header(referer=None):
+        header = {"User-Agent": "Mozilla/5.0",
+                  "Accept-Encoding": None,
+                  "Referer": referer}
+        return header
 
     def __str__(self):
         return f"{self.instrument}/y{self.year}/m{self.month}"
@@ -102,14 +111,6 @@ class DataSet:
                 z_file.write(data)
         logger.debug("Download complete")
         session.close()
-
-
-    @staticmethod
-    def _header(referer=None):
-        header = {"User-Agent": "Mozilla/5.0",
-                  "Accept-Encoding": None,
-                  "Referer": referer}
-        return header
 
     def _get_form_to_send(self, response):
         soup = bs.BeautifulSoup(response.content, 'lxml')
@@ -156,3 +157,50 @@ class DataSet:
         df = self._load_csv()
         df.to_hdf(path_hdf, self.__str__(), table=True, mode="a")
         path = "/".join(self._csv_path.split("/")[:-1])
+
+    def get(self, session=None, output_path=None):
+        """Get method. Run this for process a set."""
+        logger.debug("get set : %s ", self.__str__())
+        self._download(session)
+        self._extract()
+        if not output_path:
+            raise Exception('No output_path')
+        self._save(output_path)
+
+
+class SetDownloader:
+    HISTDATA_URL = HISTDATA_URL
+
+    def __init__(self, config):
+        logger.debug("SetDownloader called with args: %s", config)
+        self.session = self._init_session()
+        self.instruments = config.get('instruments')
+        self.date_start = config.get('date_start')
+        self.date_end = config.get('date_end')
+        self.output_path = config.get('output_path')
+
+    def _init_session(self):
+        session = requests.Session()
+        try:
+            response = session.get(self.HISTDATA_URL)
+            if response.status_code != 200:
+                raise ConnectionError('HTTP error %i', response.status_code)
+        except requests.exceptions.RequestsException as e:
+            logger.exception(e)
+            raise ConnectionError("Histdata's website is unreachable. "
+                                  "Check your internet connection.")
+        return session
+
+    @property
+    def all_sets(self):
+        for instrument in self.instruments:
+            for date in pd.date_range(self.date_start, self.date_end,
+                                      freq='M', closed='left'):
+                yield DataSet(instrument, date.year, date.month)
+
+    def run(self):
+        logger.debug('Run method called.')
+        for dataset in self.all_sets:
+            logger.info("Processing set : %s", dataset.__str__())
+            dataset.get(session=self.session, output_path=self.output_path)
+        self.session.close()

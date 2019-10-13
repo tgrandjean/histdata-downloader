@@ -28,8 +28,8 @@ def log_setup(loglevel, logfile):
 
     rootlogger.addHandler(f_handler)
     rootlogger.addHandler(s_handler)
+    disable_existing_logger()
     logging.info("Log level set to: %s", loglevel.upper())
-
 
 def get_loglevel(loglevel):
     """ Check valid log level supplied and return numeric log level """
@@ -56,3 +56,9 @@ def stream_handler(loglevel):
     log_console.setFormatter(log_format)
     log_console.setLevel(loglevel)
     return log_console
+
+def disable_existing_logger():
+    """disable_existing_logger"""
+    logger_to_disable = ['urllib3', 'urllib3.connectionpool', 'numexpr.utils']
+    for _ in logger_to_disable:
+        logging.getLogger(_).setLevel(logging.CRITICAL)

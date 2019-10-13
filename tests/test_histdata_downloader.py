@@ -52,3 +52,10 @@ class TestDataSet():
 
     def test_str_method(self, dataset):
         assert dataset.__str__() == 'EURUSD/y2018/m1'
+
+    def test_type_property(self, dataset):
+        assert dataset.type == 'M1'
+        dataset.type = 'ticks'
+        assert dataset.type == 'ticks'
+        with pytest.raises(ValueError):
+            dataset.type = ''
