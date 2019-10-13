@@ -6,7 +6,7 @@ Histdata Downloader
 .. image:: https://img.shields.io/pypi/v/histdata_downloader.svg
         :target: https://pypi.python.org/pypi/histdata_downloader
 
-.. image:: https://img.shields.io/travis/tgrandjean/histdata_downloader.svg
+.. image:: https://img.shields.io/travis/tgrandjean/histdata-downloader.svg
         :target: https://travis-ci.org/tgrandjean/histdata-downloader
 
 .. image:: https://readthedocs.org/projects/histdata-downloader/badge/?version=latest
