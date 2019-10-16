@@ -2,6 +2,7 @@
 
 """Main module."""
 import os
+import sys
 import logging
 
 import bs4 as bs
@@ -91,7 +92,7 @@ class DataSet:
     def __str__(self):
         return f"{self.instrument}/y{self.year}/m{self.month}"
 
-    def _download(self, session=None):
+    def _download(self, session=None, tqdm_support=True):
         logger.debug("Start download.")
         if not session:
             session = requests.Session()
@@ -102,13 +103,16 @@ class DataSet:
         content_disposition = response.headers.get("content-disposition")
         content_length = int(response.headers.get("content-length"))
         self._zip_name = str(content_disposition).split("=")[-1]
+
         with open(os.path.join(self._tmp_dir, self._zip_name), 'wb') as z_file:
             chunk_size = 1024
             for data in tqdm(response.iter_content(chunk_size=chunk_size),
-                          total=int(content_length / chunk_size),
-                          desc='Downloading %s' % self.__str__(),
-                          unit="Ko"):
+                             total= content_length // chunk_size,
+                             desc='Download set %s' % self.__str__(),
+                             ascii=True if not tqdm_support else False,
+                             file=sys.stdout):
                 z_file.write(data)
+
         logger.debug("Download complete")
         session.close()
 
@@ -158,10 +162,10 @@ class DataSet:
         df.to_hdf(path_hdf, self.__str__(), table=True, mode="a")
         path = "/".join(self._csv_path.split("/")[:-1])
 
-    def get(self, session=None, output_path=None):
+    def get(self, session=None, output_path=None, tqdm_support=False):
         """Get method. Run this for process a set."""
         logger.debug("get set : %s ", self.__str__())
-        self._download(session)
+        self._download(session, tqdm_support=tqdm_support)
         self._extract()
         if not output_path:
             raise Exception('No output_path')
@@ -179,6 +183,7 @@ class SetDownloader:
         self.date_end = config.get('date_end')
         self.output_path = config.get('output_path')
         self.type = config.get('type')
+        self.tqdm_support = config.get('tqdm')
 
     def _init_session(self):
         session = requests.Session()
@@ -204,5 +209,7 @@ class SetDownloader:
         logger.debug('Run method called.')
         for dataset in self.all_sets:
             logger.info("Processing set : %s", dataset.__str__())
-            dataset.get(session=self.session, output_path=self.output_path)
+            dataset.get(session=self.session, output_path=self.output_path,
+                        tqdm_support=self.tqdm_support)
+            logger.info("Done. Set : %s [saved]", dataset.__str__())
         self.session.close()
