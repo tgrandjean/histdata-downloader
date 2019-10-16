@@ -15,6 +15,9 @@ Histdata Downloader
 
 
 
+**Educational purpose project !**
+
+I'm a student and this is a dummy project to learn.
 
 Simple script to download forex historical data from 'www.histdata.com'
 
