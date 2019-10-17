@@ -19,7 +19,8 @@ requirements = ['Click>=6.0',
                 'pandas',
                 'requests',
                 'tables',
-                'tqdm']
+                'tqdm',
+                'h5py']
 
 setup_requirements = ['pytest-runner', ]
 
@@ -55,6 +56,6 @@ setup(
     test_suite='tests',
     tests_require=test_requirements,
     url='https://github.com/tgrandjean/histdata-downloader',
-    version='0.5.0',
+    version='0.5.1',
     zip_safe=False,
 )
