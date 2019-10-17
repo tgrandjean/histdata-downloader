@@ -3,9 +3,12 @@
 """Main module."""
 import os
 import sys
+from datetime import datetime, timedelta
 import logging
+import re
 
 import bs4 as bs
+import h5py
 import pandas as pd
 import requests
 from tqdm import tqdm
@@ -171,6 +174,13 @@ class DataSet:
             raise Exception('No output_path')
         self._save(output_path)
 
+    @property
+    def should_update(self):
+        today = datetime.today()
+        date_set = datetime(year=self.year, month=self.month, day=1)
+        if (today - date_set) > timedelta(days=30):
+            return False
+        return True
 
 class SetDownloader:
     HISTDATA_URL = HISTDATA_URL
@@ -207,9 +217,38 @@ class SetDownloader:
 
     def run(self):
         logger.debug('Run method called.')
+        try:
+            index = self._get_index()
+        except OSError:
+            logger.info('No index')
+            index = []
         for dataset in self.all_sets:
-            logger.info("Processing set : %s", dataset.__str__())
-            dataset.get(session=self.session, output_path=self.output_path,
-                        tqdm_support=self.tqdm_support)
-            logger.info("Done. Set : %s [saved]", dataset.__str__())
+            if str(dataset) in index:
+                logger.info('Skipping %s, already in dataset.', str(dataset))
+            else:
+                logger.info("Processing set : %s", str(dataset))
+                dataset.get(session=self.session, output_path=self.output_path,
+                            tqdm_support=self.tqdm_support)
+                logger.info("Done. Set : %s [saved]", dataset)
         self.session.close()
+
+    def _get_index(self):
+        logger.debug("Get index")
+        index = []
+        hdf5_file = h5py.File(self.output_path, 'r')
+        for instr in self._get_available_instruments(hdf5_file):
+            for year in self._get_available_years_for_instr(hdf5_file, instr):
+                for month in self._get_available_months(hdf5_file, instr, year):
+                    index.append(instr + '/' + year + '/' + month)
+        hdf5_file.close()
+        logger.debug('Index : %s ', index)
+        return index
+
+    def _get_available_instruments(self, hdf5_file):
+        return list(hdf5_file.keys())
+
+    def _get_available_years_for_instr(self, hdf5_file, instrument):
+        return list(hdf5_file[instrument].keys())
+
+    def _get_available_months(self, hdf5_file, instrument, year):
+        return list(hdf5_file[instrument + '/' + year])

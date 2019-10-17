@@ -35,6 +35,7 @@ def download(**kwargs):
     logger.debug('calling download command with args %s', kwargs)
     downloader = SetDownloader(kwargs)
     downloader.run()
+    logger.info("Download complete !")
 
 
 @main.command()
