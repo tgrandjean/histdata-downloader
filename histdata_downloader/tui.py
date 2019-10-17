@@ -12,7 +12,7 @@ import time
 import npyscreen
 
 from histdata_downloader.logger import log_setup
-from histdata_downloader.histdata_downloader import SetDownloader
+from histdata_downloader.histdata_downloader import load_available_pairs
 
 logger = logging.getLogger(__name__)
 
@@ -40,8 +40,12 @@ class MainForm(npyscreen.ActionFormV2):
         self.date_end = self.add(npyscreen.TitleDateCombo, name="Date end")
         self.instruments = self.add(npyscreen.TitleMultiSelect,
                                     name='instruments', max_height=5,
-                                    values=['EURUSD', 'EURCHF', 'USDCAD',],
+                                    values=load_available_pairs(),
                                     scroll_exit=True)
+        self.select_all = self.add(SelectAllButton,
+                                   name='select all', relx=20)
+        self.unselect_all = self.add(UnselectAllButton,
+                                     name='unselect all', relx=20)
         self.output_path = self.add(npyscreen.TitleFilenameCombo,
                                     name="Output path", label=True)
         self.verbosity = self.add(npyscreen.TitleSelectOne, name='verbosity',
@@ -120,6 +124,19 @@ class LauchButton(npyscreen.ButtonPress):
         self.parent.log.values = ['Executing %s.' % self.parent.command.value]
         self.parent.log.display()
         perform(self.parent.command.value, self.parent.log)
+
+class SelectAllButton(npyscreen.ButtonPress):
+    def whenPressed(self):
+        instr = self.parent.instruments
+        instr.value = [x for x in range(len(instr.values))]
+        instr.display()
+
+class UnselectAllButton(npyscreen.ButtonPress):
+    def whenPressed(self):
+        instr = self.parent.instruments
+        instr.value = []
+        instr.display
+
 
 class Output(npyscreen.BoxTitle):
     _contained_widget = npyscreen.MultiLine

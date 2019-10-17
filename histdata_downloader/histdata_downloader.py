@@ -252,3 +252,15 @@ class SetDownloader:
 
     def _get_available_months(self, hdf5_file, instrument, year):
         return list(hdf5_file[instrument + '/' + year])
+
+
+def load_available_pairs(url='https://www.histdata.com/download-free-forex-data/?/ascii/1-minute-bar-quotes'):
+    logger.debug("Loading available pairs from histdata")
+    response = requests.get(url)
+    soup = bs.BeautifulSoup(response.content, 'html.parser')
+    table = soup.find_all('table')[0]
+    instr = table.find_all('strong')
+    instr = list(map(str, instr))
+    regex = re.compile(r'[A-Z]{3}/[A-Z]{3}')
+    parser = lambda x : ''.join(regex.findall(x)[0].split('/'))
+    return list(map(parser, instr))
